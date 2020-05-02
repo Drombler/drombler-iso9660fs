@@ -14,9 +14,28 @@ pipeline {
             }
         }
 
-        stage ('Build') {
+        stage ('Build non-master branches') {
+            when {
+                not {
+                    branch 'master'
+                }
+            }
             steps {
                 sh 'mvn -Dmaven.test.failure.ignore=true clean install -DperformRelease=true' 
+            }
+            post {
+                success {
+                    junit 'target/surefire-reports/**/*.xml' 
+                }
+            }
+        }
+
+        stage ('Build and deploy master branch') {
+            when {
+                branch 'master'
+            }
+            steps {
+                sh 'mvn -Dmaven.test.failure.ignore=true clean deploy -DperformRelease=true' 
             }
             post {
                 success {
