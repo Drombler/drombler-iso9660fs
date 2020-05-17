@@ -8,8 +8,8 @@ pipeline {
         jdk 'Java SE 11' 
     }
     options {
-        timestamps()
-        ansiColor("xterm")
+//         timestamps()
+//         ansiColor("xterm")
     }
     parameters {
         booleanParam(name: "RELEASE",
@@ -62,9 +62,9 @@ pipeline {
                 expression { params.RELEASE }
             }
             steps {
-                release {
+//                 release {
                     sh 'mvn -Dmaven.test.failure.ignore=true clean deploy -DperformRelease=true'
-                }
+//                 }
             }
             post {
                 success {
