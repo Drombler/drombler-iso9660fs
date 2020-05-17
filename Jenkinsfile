@@ -27,9 +27,6 @@ pipeline {
                     echo "M2_HOME = ${M2_HOME}"
                 '''
             }
-             always {
-                deleteDir()
-             }
         }
 
         stage ('Build non-master branches') {
