@@ -15,6 +15,9 @@ pipeline {
         booleanParam(name: "RELEASE",
                 description: "Build a release from current commit.",
                 defaultValue: false)
+        string(name:"versionDigitToIncrement",
+                description:"Which digit to increment. Starts from zero.",
+                defaultValue: "1")
     }
     stages { 
         stage ('Initialize') {
@@ -63,13 +66,9 @@ pipeline {
             }
             steps {
 //                 release {
-                    sh 'mvn -Dmaven.test.failure.ignore=true clean deploy -DperformRelease=true'
+                    sh 'mvn -Dmaven.test.failure.ignore=true gitflow:release-start -DperformRelease=true -DversionDigitToIncrement=${versionDigitToIncrement}'
+                    sh 'mvn -Dmaven.test.failure.ignore=true gitflow:release-finish -DperformRelease=true -DversionDigitToIncrement=${versionDigitToIncrement}'
 //                 }
-            }
-            post {
-                success {
-                    junit 'target/surefire-reports/**/*.xml'
-                }
             }
         }
     }
