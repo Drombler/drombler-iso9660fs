@@ -15,8 +15,8 @@ pipeline {
         booleanParam(name: "RELEASE",
                 description: "Build a release from current commit.",
                 defaultValue: false)
-        string(name:"versionDigitToIncrement"
-                description:"Which digit to increment. Starts from zero."
+        string(name:"versionDigitToIncrement",
+                description:"Which digit to increment. Starts from zero.",
                 defaultValue: "1")
     }
     stages { 
