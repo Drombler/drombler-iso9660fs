@@ -58,10 +58,8 @@ pipeline {
 
         stage ('Release') {
             when {
-                allOf {
-                    branch 'master'
-                    expression { params.RELEASE }
-                }
+                branch 'master'
+                expression { params.RELEASE }
             }
             steps {
                 release {
