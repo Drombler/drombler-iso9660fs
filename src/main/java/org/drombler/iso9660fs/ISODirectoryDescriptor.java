@@ -30,7 +30,7 @@ public class ISODirectoryDescriptor {
 
     private final short length;
     private final short extendedAttributeRecordLength;
-    private final long locationOfExtend; // logocal block number of the first logical block allocated to the file
+    private final long locationOfExtend; // logical block number of the first logical block allocated to the file
     private final long dataLength;
     private final ZonedDateTime recordingDateTime;
     private final Set<ISOFileFlag> fileFlags;
