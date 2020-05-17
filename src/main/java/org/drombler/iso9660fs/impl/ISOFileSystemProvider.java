@@ -36,11 +36,11 @@ import java.nio.file.spi.FileSystemProvider;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import org.drombler.iso9660fs.impl.ISOFileSystem;
 
 //https://docs.oracle.com/javase/8/docs/technotes/guides/io/fsp/filesystemprovider.html
 //http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/9dc67d03e6e5/src/share/demo/nio/zipfs/src/com/sun/nio/zipfs
 //http://wiki.osdev.org/ISO_9660
+//https://www.cdroller.com/htm/readdata.html
 /**
  *
  * @author puce

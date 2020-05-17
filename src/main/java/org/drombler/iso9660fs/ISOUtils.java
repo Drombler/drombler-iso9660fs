@@ -18,6 +18,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 
 /**
  *
@@ -148,4 +149,24 @@ public final class ISOUtils {
     private static ZoneOffset getZoneOffset(byte quarterHourZoneOffset) {
         return ZoneOffset.ofTotalSeconds(quarterHourZoneOffset * 15 * 60);
     }
+
+    public static void readUnused(ByteBuffer byteBuffer, int length) {
+        byte[] dst = new byte[length];
+        byteBuffer.get(dst);
+
+        for (byte unused : dst) {
+            if (unused != 0) {
+                throw new IllegalArgumentException("0s expected but was: " + Arrays.toString(dst));
+            }
+        }
+    }
+
+    public static boolean isEven(int intValue) {
+        return (intValue) % 2 == 0;
+    }
+
+    public static boolean isOdd(int intValue) {
+        return !isEven(intValue);
+    }
+
 }

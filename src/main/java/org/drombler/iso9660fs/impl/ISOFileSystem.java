@@ -58,6 +58,7 @@ public class ISOFileSystem extends FileSystem {
     private final SeekableByteChannel byteChannel;
     private boolean open = true;
     private ISOPrimaryVolumeDescriptor primaryVolumeDescriptor;
+    private ISODirectoryDescriptor rootDirectoryDescriptor;
 
     ISOFileSystem(ISOFileSystemProvider fileSystemProvider, Path fileSystemPath, Map<String, ?> env) throws IOException {
         this.fileSystemProvider = fileSystemProvider;
@@ -88,8 +89,8 @@ public class ISOFileSystem extends FileSystem {
         System.out.println(volumeDescriptor);
         if (volumeDescriptor.getType() == ISOVolumeDescriptorType.PRIMARY_VOLUME_DESCRIPTOR) {
             this.primaryVolumeDescriptor = (ISOPrimaryVolumeDescriptor) volumeDescriptor;
-            ISODirectoryDescriptor rootDirectoryDescriptor = primaryVolumeDescriptor.getRootDirectoryDescriptor();
-            long locationOfExtend = rootDirectoryDescriptor.getLocationOfExtend();
+            this.rootDirectoryDescriptor = primaryVolumeDescriptor.getRootDirectoryDescriptor();
+            this.rootDirectoryDescriptor.loadDirectory(byteChannel, primaryVolumeDescriptor, false);
         }
 
     }

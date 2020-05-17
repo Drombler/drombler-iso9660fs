@@ -16,7 +16,7 @@ package org.drombler.iso9660fs;
 
 import java.nio.ByteBuffer;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
+import static org.drombler.iso9660fs.ISOUtils.readUnused;
 
 /**
  *
@@ -90,7 +90,7 @@ public class ISOPrimaryVolumeDescriptor extends ISOVolumeDescriptor {
             throw new IllegalArgumentException(
                     "The File Structure Version  must be " + FILE_STRUCTURE_VERSION + " but was: " + fileStructureVersion);
         }
-        readUnused(byteBuffer, 1);
+        ISOUtils.readUnused(byteBuffer, 1);
         ISOUtils.getBytes(byteBuffer, 512);
         ISOUtils.getBytes(byteBuffer, 653);
     }
@@ -126,16 +126,6 @@ public class ISOPrimaryVolumeDescriptor extends ISOVolumeDescriptor {
         return directoryEntryForRootDirectory;
     }
 
-    private void readUnused(ByteBuffer byteBuffer, int length) {
-        byte[] dst = new byte[length];
-        byteBuffer.get(dst);
-
-        for (byte unused : dst) {
-            if (unused != 0) {
-                throw new IllegalArgumentException("0s expected but was: " + Arrays.toString(dst));
-            }
-        }
-    }
 
     public String getSystemIdentifier() {
         return systemIdentifier;
