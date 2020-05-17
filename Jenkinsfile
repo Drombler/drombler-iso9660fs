@@ -68,7 +68,7 @@ pipeline {
             steps {
 //                 release {
                     sh 'mvn -B -e -X -Dmaven.test.failure.ignore=true gitflow:release-start -DperformRelease=true -DversionDigitToIncrement=${versionDigitToIncrement}'
-                    sh 'mvn -B -e -X -Dmaven.test.failure.ignore=true gitflow:release-finish -DperformRelease=true -DversionDigitToIncrement=${versionDigitToIncrement}'
+                    sh 'mvn -B -e -X -Dmaven.test.failure.ignore=true gitflow:release-finish -DperformRelease=true -DversionDigitToIncrement=${versionDigitToIncrement} -DpostReleaseGoals=deploy'
 //                 }
             }
         }
