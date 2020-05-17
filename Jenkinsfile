@@ -7,10 +7,10 @@ pipeline {
         maven 'Apache Maven 3.6' 
         jdk 'Java SE 11' 
     }
-    options {
+//     options {
 //         timestamps()
 //         ansiColor("xterm")
-    }
+//     }
     parameters {
         booleanParam(name: "RELEASE",
                 description: "Build a release from current commit.",
