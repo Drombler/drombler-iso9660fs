@@ -60,6 +60,21 @@ Contributor(s): .
     </prerequisites>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.amashchenko.maven.plugin</groupId>
+                    <artifactId>gitflow-maven-plugin</artifactId>
+                    <version>1.14.0</version>
+                    <configuration>
+                        <gitFlowConfig>
+                            <developmentBranch>master</developmentBranch>
+                            <versionTagPrefix>release-</versionTagPrefix>
+                        </gitFlowConfig>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.felix</groupId>
