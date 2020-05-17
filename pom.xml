@@ -25,7 +25,7 @@ Contributor(s): .
     
     <groupId>org.drombler.iso9660fs</groupId>
     <artifactId>drombler-iso9660fs</artifactId>
-    <version>0.3-SNAPSHOT</version>
+    <version>0.3</version>
     <packaging>bundle</packaging>
 
     <name>Drombler ISO 9660</name>
