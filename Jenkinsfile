@@ -27,6 +27,9 @@ pipeline {
                     echo "M2_HOME = ${M2_HOME}"
                 '''
             }
+             always {
+                deleteDir()
+             }
         }
 
         stage ('Build non-master branches') {
@@ -67,10 +70,11 @@ pipeline {
             }
             steps {
 //                 release {
-                    sh 'mvn -B -Dmaven.test.failure.ignore=true gitflow:release-start -DperformRelease=true -DversionDigitToIncrement=${versionDigitToIncrement}'
-                    sh 'mvn -B -Dmaven.test.failure.ignore=true gitflow:release-finish -DperformRelease=true -DversionDigitToIncrement=${versionDigitToIncrement}'
+                    sh 'mvn -B -e -X -Dmaven.test.failure.ignore=true gitflow:release-start -DperformRelease=true -DversionDigitToIncrement=${versionDigitToIncrement}'
+                    sh 'mvn -B -e -X -Dmaven.test.failure.ignore=true gitflow:release-finish -DperformRelease=true -DversionDigitToIncrement=${versionDigitToIncrement}'
 //                 }
             }
         }
     }
+
 }
