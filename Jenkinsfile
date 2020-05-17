@@ -45,10 +45,10 @@ pipeline {
             }
         }
 
-        stage ('Build and deploy master branch') {
+        stage ('Build & deploy master branch') {
             when {
                 branch 'master'
-                not(expression { params.RELEASE })
+                not { expression { params.RELEASE } }
             }
             steps {
                 sh 'mvn -Dmaven.test.failure.ignore=true clean deploy -DperformRelease=true' 
