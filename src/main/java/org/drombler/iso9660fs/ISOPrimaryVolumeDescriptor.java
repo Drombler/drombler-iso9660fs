@@ -14,12 +14,14 @@
  */
 package org.drombler.iso9660fs;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.time.ZonedDateTime;
+
 import static org.drombler.iso9660fs.ISOUtils.readUnused;
 
 /**
- *
  * @author puce
  */
 public class ISOPrimaryVolumeDescriptor extends ISOVolumeDescriptor {
@@ -50,6 +52,10 @@ public class ISOPrimaryVolumeDescriptor extends ISOVolumeDescriptor {
     private final byte fileStructureVersion;
     private final byte[] directoryEntryForRootDirectory;
     private final ISODirectoryDescriptor rootDirectoryDescriptor;
+    private ISOPathTable typeLPathTable;
+    private ISOPathTable optionalTypeLPathTable;
+    private ISOPathTable typeRPathTable;
+    private ISOPathTable optionalTypeRPathTable;
 
     public ISOPrimaryVolumeDescriptor(ByteBuffer byteBuffer) {
         super(ISOVolumeDescriptorType.PRIMARY_VOLUME_DESCRIPTOR, byteBuffer);
@@ -212,6 +218,34 @@ public class ISOPrimaryVolumeDescriptor extends ISOVolumeDescriptor {
      */
     public ISODirectoryDescriptor getRootDirectoryDescriptor() {
         return rootDirectoryDescriptor;
+    }
+
+    public void loadPathTables(SeekableByteChannel byteChannel) throws IOException {
+        this.typeLPathTable = createPathTable(byteChannel, ISOEncodingType.LSB, locationOfTypeLPathTable);
+        if (locationOfOptionalTypeLPathTable != 0) {
+            this.optionalTypeLPathTable = createPathTable(byteChannel, ISOEncodingType.LSB, locationOfOptionalTypeLPathTable);
+        }
+        this.typeRPathTable = createPathTable(byteChannel, ISOEncodingType.MSB, locationOfTypeMPathTable);
+        if (locationOfOptionalTypeMPathTable != 0) {
+            this.optionalTypeRPathTable = createPathTable(byteChannel, ISOEncodingType.MSB, locationOfOptionalTypeMPathTable);
+        }
+    }
+
+    private ISOPathTable createPathTable(SeekableByteChannel byteChannel, ISOEncodingType encodingType, long locationOfPathTable) throws IOException {
+        ByteBuffer byteBuffer = createByteBuffer(byteChannel, locationOfPathTable, pathTableSize);
+        return new ISOPathTable(encodingType, byteBuffer);
+    }
+
+    private ByteBuffer createByteBuffer(SeekableByteChannel byteChannel, long location, long dataLength) throws IOException {
+        long newPosition = location * getLogicalBlockSize();
+        byteChannel.position(newPosition);
+        ByteBuffer byteBuffer = ByteBuffer.allocate((int) dataLength);
+        final int numBytes = byteChannel.read(byteBuffer);
+        if (numBytes != dataLength) {
+            throw new IOException("Too few data to read: " + numBytes);
+        }
+        byteBuffer.position(0);
+        return byteBuffer;
     }
 
 }
