@@ -1,31 +1,33 @@
 package org.drombler.iso9660fs;
 
 import java.nio.ByteBuffer;
-
-/**
- * @author Florian
- */
-
+import java.util.ArrayList;
+import java.util.List;
 
 public class ISOPathTable {
 
-    private final short directoryIdentifierLength;
-    private final short extendedAttributeRecordLength;
-    private final long locationOfExtend;
-    private final int parentDirectoryNumber; // index in path table
-    private final String directoryIdentifier; // name
+    private final ISOEncodingType encodingType;
+    private final List<ISOPathTableEntry> pathTableEntries = new ArrayList<>();
 
     public ISOPathTable(ISOEncodingType encodingType, ByteBuffer byteBuffer) {
-        this.directoryIdentifierLength = ISOUtils.getUnsignedByte(byteBuffer);
-        this.extendedAttributeRecordLength = ISOUtils.getUnsignedByte(byteBuffer);
-        this.locationOfExtend = encodingType.getUnsignedInt32(byteBuffer);
-        this.parentDirectoryNumber = encodingType.getUnsignedInt16(byteBuffer);
-        this.directoryIdentifier = ISOUtils.getStringDTrimmed(byteBuffer, directoryIdentifierLength);
-
-        if (ISOUtils.isOdd(directoryIdentifierLength)) {
-            ISOUtils.readUnused(byteBuffer, 1);
+        this.encodingType = encodingType;
+        while (byteBuffer.remaining() > 0) {
+            pathTableEntries.add(new ISOPathTableEntry(encodingType, byteBuffer));
         }
     }
 
+    public List<ISOPathTableEntry> getPathTableEntries() {
+        return pathTableEntries;
+    }
 
+    public ISOEncodingType getEncodingType() {
+        return encodingType;
+    }
+
+    @Override
+    public String toString() {
+        return "ISOPathTable{" +
+                "encodingType=" + encodingType +
+                '}';
+    }
 }
