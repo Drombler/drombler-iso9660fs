@@ -14,8 +14,10 @@
  */
 package org.drombler.iso9660fs;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.SeekableByteChannel;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -167,6 +169,18 @@ public final class ISOUtils {
 
     public static boolean isOdd(int intValue) {
         return !isEven(intValue);
+    }
+
+    public static ByteBuffer createByteBuffer(SeekableByteChannel byteChannel, long location, long dataLength, int logicalBlockSize) throws IOException {
+        long newPosition = location * logicalBlockSize;
+        byteChannel.position(newPosition);
+        ByteBuffer byteBuffer = ByteBuffer.allocate((int) dataLength);
+        final int numBytes = byteChannel.read(byteBuffer);
+        if (numBytes != dataLength) {
+            throw new IOException("Too few data to read: " + numBytes);
+        }
+        byteBuffer.position(0);
+        return byteBuffer;
     }
 
 }
