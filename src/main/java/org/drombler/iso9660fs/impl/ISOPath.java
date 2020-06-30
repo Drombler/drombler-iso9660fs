@@ -14,17 +14,14 @@
  */
 package org.drombler.iso9660fs.impl;
 
+import org.drombler.iso9660fs.ISODirectoryRecord;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.FileSystem;
-import java.nio.file.InvalidPathException;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.nio.file.WatchEvent;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Objects;
@@ -56,7 +53,7 @@ public class ISOPath implements Path {
     }
 
     @Override
-    public FileSystem getFileSystem() {
+    public ISOFileSystem getFileSystem() {
         return fileSystem;
     }
 
@@ -518,4 +515,26 @@ public class ISOPath implements Path {
         return sb.toString();
     }
 
+    public BasicFileAttributes getAttributes() throws IOException {
+        BasicFileAttributes attributes = fileSystem.getAttributes(this);
+        if (attributes == null) {
+            throw new NoSuchFileException(toString());
+        }
+        return attributes;
+    }
+
+    public ISODirectoryRecord getDirectoryRecord() throws IOException {
+        return fileSystem.getDirectoryRecord(this);
+    }
+
+    public static ISOPath toISOPath(Path path) {
+        checkISOPath(path);
+        return (ISOPath) path;
+    }
+
+    public static void checkISOPath(Path path) {
+        if (!(path instanceof ISOPath)) {
+            throw new ProviderMismatchException("Not an ISO path: " + path);
+        }
+    }
 }

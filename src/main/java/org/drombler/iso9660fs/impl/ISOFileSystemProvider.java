@@ -14,21 +14,12 @@
  */
 package org.drombler.iso9660fs.impl;
 
+import org.drombler.iso9660fs.ISOFileFlag;
+
 import java.io.IOException;
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.file.AccessMode;
-import java.nio.file.CopyOption;
-import java.nio.file.DirectoryStream;
-import java.nio.file.FileStore;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystemAlreadyExistsException;
-import java.nio.file.FileSystemNotFoundException;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.OpenOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
@@ -37,12 +28,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static org.drombler.iso9660fs.impl.ISOPath.toISOPath;
+
 //https://docs.oracle.com/javase/8/docs/technotes/guides/io/fsp/filesystemprovider.html
 //http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/9dc67d03e6e5/src/share/demo/nio/zipfs/src/com/sun/nio/zipfs
 //http://wiki.osdev.org/ISO_9660
 //https://www.cdroller.com/htm/readdata.html
+//http://www.reverse-engineering.info/CD/iso9660.pdf
+
 /**
- *
  * @author puce
  */
 public class ISOFileSystemProvider extends FileSystemProvider {
@@ -124,14 +118,12 @@ public class ISOFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
-    public DirectoryStream<Path> newDirectoryStream(Path dir,
-            DirectoryStream.Filter<? super Path> filter) throws IOException {
+    public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public void createDirectory(Path dir,
-            FileAttribute<?>... attrs) throws IOException {
+    public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -157,12 +149,14 @@ public class ISOFileSystemProvider extends FileSystemProvider {
 
     @Override
     public boolean isHidden(Path path) throws IOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        ISOPath isoPath = toISOPath(path);
+        return isoPath.getDirectoryRecord().getFileFlags().contains(ISOFileFlag.HIDDEN);
     }
 
     @Override
-    public FileStore getFileStore(Path path) throws IOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public FileStore getFileStore(Path path) {
+        ISOPath isoPath = toISOPath(path);
+        return isoPath.getFileSystem().getFileStores().iterator().next(); // single file store per file system
     }
 
     @Override
@@ -178,7 +172,10 @@ public class ISOFileSystemProvider extends FileSystemProvider {
     @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws
             IOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if (type == BasicFileAttributes.class) {
+            return type.cast(toISOPath(path).getAttributes());
+        }
+        throw new UnsupportedOperationException("Unsupported attributes: " + type.getSimpleName());
     }
 
     @Override

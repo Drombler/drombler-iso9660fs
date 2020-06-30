@@ -14,12 +14,17 @@
  */
 package org.drombler.iso9660fs;
 
+import org.drombler.iso9660fs.impl.ISOPath;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.time.ZonedDateTime;
 
 import static org.drombler.iso9660fs.ISOUtils.readUnused;
+import static org.drombler.iso9660fs.impl.ISOPath.toISOPath;
 
 /**
  * @author puce
@@ -51,7 +56,7 @@ public class ISOPrimaryVolumeDescriptor extends ISOVolumeDescriptor {
     private final ZonedDateTime volumeEffectiveDateTime;
     private final byte fileStructureVersion;
     private final byte[] directoryEntryForRootDirectory;
-    private final ISODirectoryDescriptor rootDirectoryDescriptor;
+    private final ISODirectoryRecord rootDirectoryDescriptor;
     private ISOPathTable typeLPathTable;
     private ISOPathTable optionalTypeLPathTable;
     private ISOPathTable typeRPathTable;
@@ -77,7 +82,7 @@ public class ISOPrimaryVolumeDescriptor extends ISOVolumeDescriptor {
 //        if (directoryEntryForRootDirectory[0] != 0) {
 //            throw new IllegalArgumentException("0x00 expected but was: 0x" + Integer.toHexString(directoryEntryForRootDirectory[0]));
 //        }
-        this.rootDirectoryDescriptor = new ISODirectoryDescriptor(ByteBuffer.wrap(directoryEntryForRootDirectory));
+        this.rootDirectoryDescriptor = new ISODirectoryRecord(ByteBuffer.wrap(directoryEntryForRootDirectory));
         this.volumeSetIdentifier = ISOUtils.getStringDTrimmed(byteBuffer, 128);
         ISOUtils.getBytes(byteBuffer, 128);
         ISOUtils.getBytes(byteBuffer, 128);
@@ -99,33 +104,6 @@ public class ISOPrimaryVolumeDescriptor extends ISOVolumeDescriptor {
         ISOUtils.readUnused(byteBuffer, 1);
         ISOUtils.getBytes(byteBuffer, 512);
         ISOUtils.getBytes(byteBuffer, 653);
-    }
-
-    @Override
-    public String toString() {
-        return "ISOPrimaryVolumeDescriptor{"
-                + super.toString()
-                + "\n, systemIdentifier=" + systemIdentifier
-                + "\n, volumeIdentifier=" + volumeIdentifier
-                + "\n, volumeSpaceSize=" + volumeSpaceSize
-                + "\n, volumeSetSize=" + volumeSetSize
-                + "\n, volumeSequenceNumber=" + volumeSequenceNumber
-                + "\n, logicalBlockSize=" + logicalBlockSize
-                + "\n, pathTableSize=" + pathTableSize
-                + "\n, locationOfTypeLPathTable=" + locationOfTypeLPathTable
-                + "\n, locationOfOptionalTypeLPathTable=" + locationOfOptionalTypeLPathTable
-                + "\n, locationOfTypeMPathTable=" + locationOfTypeMPathTable
-                + "\n, locationOfOptionalTypeMPathTable=" + locationOfOptionalTypeMPathTable
-                + "\n, volumeSetIdentifier=" + volumeSetIdentifier
-                + "\n, copyrightFileIdentifier=" + copyrightFileIdentifier
-                + "\n, abstractFileIdentifier=" + abstractFileIdentifier
-                + "\n, bibliographicFileIdentifier=" + bibliographicFileIdentifier
-                + "\n, volumeCreationDateTime=" + volumeCreationDateTime
-                + "\n, volumeModificationDateTime=" + volumeModificationDateTime
-                + "\n, volumeExpirationDateTime=" + volumeExpirationDateTime
-                + "\n, volumeEffectiveDateTime=" + volumeEffectiveDateTime
-                + "\n, fileStructureVersion=" + fileStructureVersion
-                + "\n, rootDirectoryDescriptor=" + rootDirectoryDescriptor + '}';
     }
 
     public byte[] getDirectoryEntryForRootDirectory() {
@@ -216,7 +194,7 @@ public class ISOPrimaryVolumeDescriptor extends ISOVolumeDescriptor {
     /**
      * @return the rootDirectoryDescriptor
      */
-    public ISODirectoryDescriptor getRootDirectoryDescriptor() {
+    public ISODirectoryRecord getRootDirectoryDescriptor() {
         return rootDirectoryDescriptor;
     }
 
@@ -231,21 +209,52 @@ public class ISOPrimaryVolumeDescriptor extends ISOVolumeDescriptor {
         }
     }
 
+    public ISODirectoryRecord loadDirectoryRecord(SeekableByteChannel byteChannel, ISOPathTableEntry pathTableEntry) throws IOException {
+        ByteBuffer byteBuffer = createByteBuffer(byteChannel, pathTableEntry.getLocationOfExtend(), logicalBlockSize);
+        return new ISODirectoryRecord(byteBuffer);
+    }
+
     private ISOPathTable createPathTable(SeekableByteChannel byteChannel, ISOEncodingType encodingType, long locationOfPathTable) throws IOException {
         ByteBuffer byteBuffer = createByteBuffer(byteChannel, locationOfPathTable, pathTableSize);
         return new ISOPathTable(encodingType, byteBuffer);
     }
 
-    private ByteBuffer createByteBuffer(SeekableByteChannel byteChannel, long location, long dataLength) throws IOException {
-        long newPosition = location * getLogicalBlockSize();
-        byteChannel.position(newPosition);
-        ByteBuffer byteBuffer = ByteBuffer.allocate((int) dataLength);
-        final int numBytes = byteChannel.read(byteBuffer);
-        if (numBytes != dataLength) {
-            throw new IOException("Too few data to read: " + numBytes);
-        }
-        byteBuffer.position(0);
-        return byteBuffer;
+    public ByteBuffer createByteBuffer(SeekableByteChannel byteChannel, long location, long dataLength) throws IOException {
+        return ISOUtils.createByteBuffer(byteChannel, location, dataLength, getLogicalBlockSize());
     }
 
+    public ISOPathTableEntry lookupPathTable(Path path) {
+        ISOPath isoPath = toISOPath(path);
+        if (isoPath.getFileSystem().getPrimaryVolumeDescriptor() != this) {
+            throw new InvalidPathException(path.toString(), "Not a path of this file system: " + isoPath.getFileSystem());
+        }
+        return typeLPathTable.lookup(path);
+    }
+
+    @Override
+    public String toString() {
+        return "ISOPrimaryVolumeDescriptor{"
+                + super.toString()
+                + "\n, systemIdentifier=" + systemIdentifier
+                + "\n, volumeIdentifier=" + volumeIdentifier
+                + "\n, volumeSpaceSize=" + volumeSpaceSize
+                + "\n, volumeSetSize=" + volumeSetSize
+                + "\n, volumeSequenceNumber=" + volumeSequenceNumber
+                + "\n, logicalBlockSize=" + logicalBlockSize
+                + "\n, pathTableSize=" + pathTableSize
+                + "\n, locationOfTypeLPathTable=" + locationOfTypeLPathTable
+                + "\n, locationOfOptionalTypeLPathTable=" + locationOfOptionalTypeLPathTable
+                + "\n, locationOfTypeMPathTable=" + locationOfTypeMPathTable
+                + "\n, locationOfOptionalTypeMPathTable=" + locationOfOptionalTypeMPathTable
+                + "\n, volumeSetIdentifier=" + volumeSetIdentifier
+                + "\n, copyrightFileIdentifier=" + copyrightFileIdentifier
+                + "\n, abstractFileIdentifier=" + abstractFileIdentifier
+                + "\n, bibliographicFileIdentifier=" + bibliographicFileIdentifier
+                + "\n, volumeCreationDateTime=" + volumeCreationDateTime
+                + "\n, volumeModificationDateTime=" + volumeModificationDateTime
+                + "\n, volumeExpirationDateTime=" + volumeExpirationDateTime
+                + "\n, volumeEffectiveDateTime=" + volumeEffectiveDateTime
+                + "\n, fileStructureVersion=" + fileStructureVersion
+                + "\n, rootDirectoryDescriptor=" + rootDirectoryDescriptor + '}';
+    }
 }

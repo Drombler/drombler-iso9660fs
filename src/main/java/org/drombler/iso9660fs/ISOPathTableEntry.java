@@ -48,10 +48,16 @@ public class ISOPathTableEntry {
     }
 
 
+//    public ISODirectoryRecord loadDirectoryRecord(SeekableByteChannel byteChannel, ISOPrimaryVolumeDescriptor primaryVolumeDescriptor) {
+//        primaryVolumeDescriptor.
+//        return null;
+//    }
+
     @Override
     public String toString() {
         return "ISOPathTableEntry{" +
                 "directoryIdentifier='" + directoryIdentifier + '\'' +
                 '}';
     }
+
 }
