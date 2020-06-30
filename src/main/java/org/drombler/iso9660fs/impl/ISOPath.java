@@ -515,7 +515,7 @@ public class ISOPath implements Path {
         return sb.toString();
     }
 
-    public BasicFileAttributes getAttributes() throws IOException {
+    /* package-private */ BasicFileAttributes getAttributes() throws IOException {
         BasicFileAttributes attributes = fileSystem.getAttributes(this);
         if (attributes == null) {
             throw new NoSuchFileException(toString());
@@ -523,7 +523,7 @@ public class ISOPath implements Path {
         return attributes;
     }
 
-    public ISODirectoryRecord getDirectoryRecord() throws IOException {
+    /* package-private */ ISODirectoryRecord getDirectoryRecord() throws IOException {
         return fileSystem.getDirectoryRecord(this);
     }
 
