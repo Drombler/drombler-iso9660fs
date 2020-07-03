@@ -56,7 +56,7 @@ public class ISOPrimaryVolumeDescriptor extends ISOVolumeDescriptor {
     private final ZonedDateTime volumeEffectiveDateTime;
     private final byte fileStructureVersion;
     private final byte[] directoryEntryForRootDirectory;
-    private final ISODirectoryRecord rootDirectoryDescriptor;
+    private final ISODirectoryRecord rootDirectoryRecord;
     private ISOPathTable typeLPathTable;
     private ISOPathTable optionalTypeLPathTable;
     private ISOPathTable typeRPathTable;
@@ -82,7 +82,7 @@ public class ISOPrimaryVolumeDescriptor extends ISOVolumeDescriptor {
 //        if (directoryEntryForRootDirectory[0] != 0) {
 //            throw new IllegalArgumentException("0x00 expected but was: 0x" + Integer.toHexString(directoryEntryForRootDirectory[0]));
 //        }
-        this.rootDirectoryDescriptor = new ISODirectoryRecord(ByteBuffer.wrap(directoryEntryForRootDirectory));
+        this.rootDirectoryRecord = new ISODirectoryRecord(ByteBuffer.wrap(directoryEntryForRootDirectory));
         this.volumeSetIdentifier = ISOUtils.getStringDTrimmed(byteBuffer, 128);
         ISOUtils.getBytes(byteBuffer, 128);
         ISOUtils.getBytes(byteBuffer, 128);
@@ -194,8 +194,8 @@ public class ISOPrimaryVolumeDescriptor extends ISOVolumeDescriptor {
     /**
      * @return the rootDirectoryDescriptor
      */
-    public ISODirectoryRecord getRootDirectoryDescriptor() {
-        return rootDirectoryDescriptor;
+    public ISODirectoryRecord getRootDirectoryRecord() {
+        return rootDirectoryRecord;
     }
 
     public void loadPathTables(SeekableByteChannel byteChannel) throws IOException {
@@ -255,6 +255,6 @@ public class ISOPrimaryVolumeDescriptor extends ISOVolumeDescriptor {
                 + "\n, volumeExpirationDateTime=" + volumeExpirationDateTime
                 + "\n, volumeEffectiveDateTime=" + volumeEffectiveDateTime
                 + "\n, fileStructureVersion=" + fileStructureVersion
-                + "\n, rootDirectoryDescriptor=" + rootDirectoryDescriptor + '}';
+                + "\n, rootDirectoryRecord=" + rootDirectoryRecord + '}';
     }
 }

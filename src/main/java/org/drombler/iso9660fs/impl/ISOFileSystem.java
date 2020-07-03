@@ -58,7 +58,7 @@ public class ISOFileSystem extends FileSystem {
     private boolean open = true;
 
     private ISOPrimaryVolumeDescriptor primaryVolumeDescriptor;
-    private ISODirectoryRecord rootDirectoryDescriptor;
+    private ISODirectoryRecord rootDirectoryRecord;
 
     ISOFileSystem(ISOFileSystemProvider fileSystemProvider, Path fileSystemPath, Map<String, ?> env) throws IOException {
         this.fileSystemProvider = fileSystemProvider;
@@ -89,9 +89,9 @@ public class ISOFileSystem extends FileSystem {
         System.out.println(volumeDescriptor);
         if (volumeDescriptor.getType() == ISOVolumeDescriptorType.PRIMARY_VOLUME_DESCRIPTOR) {
             this.primaryVolumeDescriptor = (ISOPrimaryVolumeDescriptor) volumeDescriptor;
-            this.rootDirectoryDescriptor = primaryVolumeDescriptor.getRootDirectoryDescriptor();
+            this.rootDirectoryRecord = primaryVolumeDescriptor.getRootDirectoryRecord();
             primaryVolumeDescriptor.loadPathTables(byteChannel);
-            this.rootDirectoryDescriptor.loadDirectory(byteChannel, primaryVolumeDescriptor, false);
+            this.rootDirectoryRecord.loadDirectory(byteChannel, primaryVolumeDescriptor, false);
         }
 
     }
@@ -169,6 +169,10 @@ public class ISOFileSystem extends FileSystem {
         return primaryVolumeDescriptor;
     }
 
+    public ISODirectoryRecord getRootDirectoryRecord() {
+        return rootDirectoryRecord;
+    }
+
     /* package-private */ ISOPath getRootDirectory() {
         return rootDirectory;
     }
@@ -207,7 +211,7 @@ public class ISOFileSystem extends FileSystem {
 
     /* package-private */ ISODirectoryRecord getDirectoryRecord(ISOPath path) throws IOException {
         if (path.equals(getRootDirectory())) {
-            return rootDirectoryDescriptor;
+            return rootDirectoryRecord;
         } else {
             ISOPathTableEntry pathTableEntry = primaryVolumeDescriptor.lookupPathTable(path);
 

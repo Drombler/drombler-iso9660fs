@@ -119,7 +119,11 @@ public class ISOFileSystemProvider extends FileSystemProvider {
 
     @Override
     public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        ISOPath isoDirPath = toISOPath(dir);
+        if (!Files.isDirectory(isoDirPath)) {
+
+        }
+        return new ISODirectoryStream(isoDirPath);
     }
 
     @Override
