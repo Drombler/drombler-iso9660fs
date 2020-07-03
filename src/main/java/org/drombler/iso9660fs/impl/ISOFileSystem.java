@@ -14,28 +14,22 @@
  */
 package org.drombler.iso9660fs.impl;
 
+import org.drombler.iso9660fs.*;
+
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.file.FileStore;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.PathMatcher;
-import java.nio.file.WatchService;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.drombler.iso9660fs.ISODirectoryDescriptor;
-import org.drombler.iso9660fs.ISOPrimaryVolumeDescriptor;
-import org.drombler.iso9660fs.ISOVolumeDescriptor;
-import org.drombler.iso9660fs.ISOVolumeDescriptorType;
 
 /**
- *
  * @author puce
  */
 public class ISOFileSystem extends FileSystem {
@@ -45,7 +39,12 @@ public class ISOFileSystem extends FileSystem {
     public static final String CURRENT_PATH_STRING = ".";
     public static final String PARENT_PATH_STRING = "..";
 
+    private static final String BASIC_FILE_ATTRIBUTES_NAME = "basic";
+
+    private static final Set<String> SUPPORTED_FILE_ATTRIBUTE_VIEWS = Set.of(BASIC_FILE_ATTRIBUTES_NAME);
+
     private final ISOFileSystemProvider fileSystemProvider;
+
     private final Path fileSystemPath;
     private final Map<String, ?> env;
     private final FileStore fileStore;
@@ -57,8 +56,9 @@ public class ISOFileSystem extends FileSystem {
     private final ISOPath parentDirectory = new ISOPath(this, PARENT_PATH_STRING, false);
     private final SeekableByteChannel byteChannel;
     private boolean open = true;
+
     private ISOPrimaryVolumeDescriptor primaryVolumeDescriptor;
-    private ISODirectoryDescriptor rootDirectoryDescriptor;
+    private ISODirectoryRecord rootDirectoryDescriptor;
 
     ISOFileSystem(ISOFileSystemProvider fileSystemProvider, Path fileSystemPath, Map<String, ?> env) throws IOException {
         this.fileSystemProvider = fileSystemProvider;
@@ -90,6 +90,7 @@ public class ISOFileSystem extends FileSystem {
         if (volumeDescriptor.getType() == ISOVolumeDescriptorType.PRIMARY_VOLUME_DESCRIPTOR) {
             this.primaryVolumeDescriptor = (ISOPrimaryVolumeDescriptor) volumeDescriptor;
             this.rootDirectoryDescriptor = primaryVolumeDescriptor.getRootDirectoryDescriptor();
+            primaryVolumeDescriptor.loadPathTables(byteChannel);
             this.rootDirectoryDescriptor.loadDirectory(byteChannel, primaryVolumeDescriptor, false);
         }
 
@@ -132,7 +133,7 @@ public class ISOFileSystem extends FileSystem {
 
     @Override
     public Set<String> supportedFileAttributeViews() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return SUPPORTED_FILE_ATTRIBUTE_VIEWS;
     }
 
     @Override
@@ -164,35 +165,72 @@ public class ISOFileSystem extends FileSystem {
         throw new UnsupportedOperationException("This is a read-only file system! There's nothing to watch!");
     }
 
-    public ISOPath getRootDirectory() {
+    public ISOPrimaryVolumeDescriptor getPrimaryVolumeDescriptor() {
+        return primaryVolumeDescriptor;
+    }
+
+    /* package-private */ ISOPath getRootDirectory() {
         return rootDirectory;
     }
 
-    public Path getEmptyPath() {
+    /* package-private */ Path getEmptyPath() {
         return emptyPath;
     }
 
-    public ISOPath getDefaultDirectory() {
+    /* package-private */ ISOPath getDefaultDirectory() {
         return rootDirectory;
     }
 
-    public Path getFileSystemPath() {
+    /* package-private */ Path getFileSystemPath() {
         return fileSystemPath;
     }
 
-    public ISOPath getCurrentDirectory() {
+    /* package-private */ ISOPath getCurrentDirectory() {
         return currentDirectory;
     }
 
-    public ISOPath getParentDirectory() {
+    /* package-private */ ISOPath getParentDirectory() {
         return parentDirectory;
     }
 
-    public SeekableByteChannel newByteChannel(Path path) {
+    /* package-private */ SeekableByteChannel newByteChannel(Path path) {
         if (!path.getFileSystem().equals(this)) {
             throw new IllegalArgumentException("The specified path belongs to a different FileSystem! Path: " + path);
         }
         return null;
+    }
+
+    /* package-private */ BasicFileAttributes getAttributes(ISOPath path) throws IOException {
+        ISODirectoryRecord directoryRecord = getDirectoryRecord(path);
+        return new ISOFileAttributes(directoryRecord);
+    }
+
+    /* package-private */ ISODirectoryRecord getDirectoryRecord(ISOPath path) throws IOException {
+        if (path.equals(getRootDirectory())) {
+            return rootDirectoryDescriptor;
+        } else {
+            ISOPathTableEntry pathTableEntry = primaryVolumeDescriptor.lookupPathTable(path);
+
+            if (pathTableEntry != null) {
+                return primaryVolumeDescriptor.loadDirectoryRecord(byteChannel, pathTableEntry);
+            } else if (path.getParent() != null) { // path table only contains entries for directories
+                pathTableEntry = primaryVolumeDescriptor.lookupPathTable(path.getParent());
+                ISODirectoryRecord directoryRecord = primaryVolumeDescriptor.loadDirectoryRecord(byteChannel, pathTableEntry);
+                directoryRecord.loadDirectory(byteChannel, primaryVolumeDescriptor, false);
+                return directoryRecord.getChildren().stream()
+                        .filter(childRecord -> childRecord.getFileIdentifier().equals(path.getFileName().toString()))
+                        .findFirst()
+                        .orElseThrow(() -> new FileNotFoundException("No directory record for path:" + path));
+            }
+            throw new FileNotFoundException("No directory record for path:" + path);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "ISOFileSystem{" +
+                "fileSystemPath=" + fileSystemPath +
+                '}';
     }
 
 }
