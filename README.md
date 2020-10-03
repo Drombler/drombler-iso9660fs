@@ -1,5 +1,7 @@
-# iso9660fs
+# Drombler ISO 9660 FS
 Java NIO.2 FileSystemProvider for ISO 9660 file system
+
+(Work in progress)
 
 ## Build the project from sources
 ```bash
